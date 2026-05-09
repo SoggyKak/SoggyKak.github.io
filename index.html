@@ -312,7 +312,7 @@
         <p style="font-family:'Exo 2',sans-serif; margin-bottom:1rem; font-size:1rem; font-weight:bold;">ENTER YOUR CODENAME:</p>
         <input type="text" id="hs-initials" maxlength="10" autocomplete="off" style="font-family:'Space Mono',monospace; font-size:2.2rem; width:280px; text-align:center; text-transform:uppercase; background:var(--glass-bg); color:var(--text-color); border:2px solid var(--border-color); border-radius:6px; margin-bottom:1.5rem; outline:none;" />
         <br>
-        <button onclick="ScoreManager.submitScore()" style="padding:12px 24px; background:var(--text-color); color:var(--card-bg); border:none; border-radius:6px; font-family:'Exo 2',sans-serif; font-weight:800; cursor:pointer; letter-spacing:2px; font-size:1.1rem; transition:transform 0.2s;">SUBMIT SCORE</button>
+        <button onclick="submitHighScore()" style="padding:12px 24px; background:var(--text-color); color:var(--card-bg); border:none; border-radius:6px; font-family:'Exo 2',sans-serif; font-weight:800; cursor:pointer; letter-spacing:2px; font-size:1.1rem; transition:transform 0.2s;">SUBMIT SCORE</button>
     </div>
 </div>
 
@@ -326,7 +326,7 @@
     <div class="hub-content">
         <div class="menu-header">
             <img class="hub-logo" src="image.png" alt="ANC team logo">
-            <p class="team-note">RESEARCH DAY 2026 | TEAM 10</p>
+            <p class="team-note">15TH RESEARCH DAY 2026</p>
         </div>
     
         <div class="games-grid">
@@ -368,7 +368,7 @@
 
 <!-- WAVE BREAKER -->
 <div id="wb-container">
-    <button id="wb-help-btn" type="button" onclick="WaveBreakerGame.showHelp()" style="position:absolute; top:20px; left:20px; padding: 8px 16px; background: rgba(0,0,0,0.5); border: 1px solid #8899aa; color: #8899aa; border-radius: 4px; cursor: pointer; font-family: 'Exo 2', sans-serif; z-index: 999; transition: all 0.3s;">HELP</button>
+    <button id="wb-help-btn" type="button" onclick="waveBreakerShowHelp()" style="position:absolute; top:20px; left:20px; padding: 8px 16px; background: rgba(0,0,0,0.5); border: 1px solid #8899aa; color: #8899aa; border-radius: 4px; cursor: pointer; font-family: 'Exo 2', sans-serif; z-index: 999; transition: all 0.3s;">HELP</button>
     <canvas id="wb-canvas"></canvas>
 </div>
 
@@ -427,7 +427,7 @@
                         <div class="s-meter-track"><div class="s-meter-fill s-m-anti" id="s-windowMeter" style="width:0%"></div></div>
                     </div>
                 </div>
-                <button class="s-fire-btn" id="s-fireBtn" type="button" onclick="SilenceGame.fireAntiWave()">FIRE ANTI-WAVE</button>
+                <button class="s-fire-btn" id="s-fireBtn" type="button" onclick="silenceFireAntiWave()">FIRE ANTI-WAVE</button>
             </div>
         </div>
         <div class="s-hint">SPACE or tap button to fire</div>
@@ -439,11 +439,13 @@
         <div class="s-go-title">NOISE WINS</div>
         <div class="s-go-score" id="s-goScore">SCORE: 0</div>
         <div class="s-go-msg" id="s-goMsg"></div>
-        <button class="s-restart-btn" type="button" onclick="SilenceGame.restartGame()">RETRY</button>
+        <button class="s-restart-btn" type="button" onclick="silenceRestartGame()">RETRY</button>
     </div>
 </div>
 
 <script>
+(function() {
+
 // ==========================================
 // PORTAL NAVIGATION & HUB ANIMATION
 // ==========================================
@@ -1801,6 +1803,16 @@ const SilenceGame = (function() {
 // Start in Hub
 showMenu();
 
+// Expose ONLY safe UI trigger functions to global scope
+window.submitHighScore = function() { ScoreManager.submitScore(); };
+window.showMenu = showMenu;
+window.startWaveBreaker = startWaveBreaker;
+window.startSilence = startSilence;
+window.waveBreakerShowHelp = function() { WaveBreakerGame.showHelp(); };
+window.silenceFireAntiWave = function() { SilenceGame.fireAntiWave(); };
+window.silenceRestartGame = function() { SilenceGame.restartGame(); };
+
+})();
 </script>
 </body>
 </html>
