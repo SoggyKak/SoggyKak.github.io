@@ -20,6 +20,8 @@
         --shadow-hover: rgba(28,48,63,0.15);
         --wall: #fafafa;
         --floor: #eef0eb;
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.3);
     }
     .dark-mode {
         --bg-color: #0d1117;
@@ -33,17 +35,30 @@
         --shadow-hover: rgba(0,0,0,0.8);
         --wall: #161b22;
         --floor: #0d1117;
+        --glass-bg: rgba(22, 27, 34, 0.7);
+        --glass-border: rgba(48, 54, 61, 0.5);
     }
     body { background: var(--bg-color); color: var(--text-color); transition: background 0.3s, color 0.3s; overflow: hidden; width: 100vw; height: 100vh; }
     
     /* MENU STYLES */
     #menu-container {
         position: absolute; top:0; left:0; width:100%; height:100%;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
         padding: 6.5rem 0 3.5rem 0;
         font-family: 'Exo 2', sans-serif;
         background-color: transparent;
         z-index: 100;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .hub-content {
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        z-index: 10;
+        padding-bottom: 2rem;
     }
     .hub-logo {
         display: block;
@@ -85,7 +100,7 @@
         opacity: 0.3;
     }
     #hub-canvas {
-        position: absolute; top:0; left:0; width:100%; height:100%;
+        position: fixed; top:0; left:0; width:100%; height:100%;
         z-index: 0;
         pointer-events: none;
         opacity: 0.15;
@@ -112,9 +127,9 @@
         right: 24px;
         z-index: 1000;
         padding: 12px 20px;
-        background: var(--card-bg);
+        background: var(--glass-bg);
         color: var(--text-color);
-        border: 2px solid var(--border-color);
+        border: 2px solid var(--glass-border);
         border-radius: 12px;
         cursor: pointer;
         font-family: 'Montserrat', sans-serif;
@@ -122,11 +137,14 @@
         letter-spacing: 1px;
         font-size: 0.75rem;
         box-shadow: 0 4px 12px var(--shadow);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         transition: all 0.3s ease;
     }
     .theme-btn:hover {
         transform: translateY(-2px);
         border-color: var(--text-color);
+        background: var(--card-bg);
         box-shadow: 0 6px 15px var(--shadow-hover);
     }
     .menu-note {
@@ -146,21 +164,22 @@
         z-index: 10;
     }
     .game-card { 
-        background: var(--card-bg); 
-        border: 2px solid var(--border-color); 
-        border-radius: 20px; 
+        background: var(--glass-bg); 
+        border: 2px solid var(--glass-border); 
+        border-radius: 24px; 
         padding: 3.5rem 3rem; 
         position: relative; 
         overflow: hidden; 
         cursor: pointer; 
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
         display: flex; 
         flex-direction: column; 
         align-items: center;
         box-shadow: 0 10px 40px var(--shadow); 
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
     }
-    .game-card:hover { transform: translateY(-15px) scale(1.02); border-color: var(--text-color); box-shadow: 0 30px 60px var(--shadow-hover); }
+    .game-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--text-color); background: var(--card-bg); box-shadow: 0 30px 60px var(--shadow-hover); }
     .game-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 10px; opacity: 0.9; transition: opacity 0.3s; }
     .card-wb::before { background: var(--text-color); }
     .card-silence::before { background: var(--text-muted); }
@@ -185,6 +204,23 @@
     .back-btn { position: absolute; top: 20px; right: 20px; padding: 8px 16px; background: rgba(0,0,0,0.5); border: 1px solid #8899aa; color: #8899aa; border-radius: 4px; cursor: pointer; font-family: 'Exo 2', sans-serif; z-index: 999; display: none; }
     .back-btn:hover { color: #fff; border-color: #fff; }
 
+    /* LEADERBOARD STYLES */
+    .leaderboard-section { width: 100%; max-width: 860px; margin-top: 3.5rem; }
+    .lb-title { text-align: center; font-family: 'Montserrat', sans-serif; font-size: 1.5rem; letter-spacing: 4px; color: var(--text-color); margin-bottom: 1.5rem; }
+    .lb-container { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; }
+    .lb-card { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem; flex: 1; min-width: 250px; color: var(--text-color); box-shadow: 0 8px 32px var(--shadow); }
+    .lb-card h3 { font-family: 'Exo 2', sans-serif; font-size: 1.2rem; text-align: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 1rem; color: var(--accent-color); letter-spacing: 2px; }
+    .lb-card ol { list-style: none; padding: 0; margin: 0; font-family: 'Space Mono', monospace; font-size: 1.1rem; }
+    .lb-card li { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed rgba(127,140,141,0.3); }
+    .lb-card li:last-child { border-bottom: none; }
+
+    @keyframes pulse-glow {
+        0% { box-shadow: 0 0 20px rgba(39,174,96,0.3); }
+        50% { box-shadow: 0 0 50px rgba(39,174,96,0.6); }
+        100% { box-shadow: 0 0 20px rgba(39,174,96,0.3); }
+    }
+    .high-score-glow { animation: pulse-glow 2s infinite; }
+
     /* WAVE BREAKER STYLES */
     #wb-container { position: absolute; top:0; left:0; width:100%; height:100%; display:none; }
     #wb-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
@@ -201,20 +237,7 @@
     .s-score-v { color: var(--text-color); }
     .s-combo-v { color: var(--text-color); }
     .s-scene { position: relative; width: 100%; height: 220px; border-radius: 8px; overflow: hidden; border: 2px solid var(--text-color); background: var(--card-bg); box-shadow: 0 4px 15px var(--shadow); }
-    .s-wall { position: absolute; top: 0; left: 0; right: 0; height: 68%; background: var(--wall); border-bottom: 2px solid var(--border-color); }
-    .s-floor { position: absolute; bottom: 0; left: 0; right: 0; height: 34%; background: var(--floor); }
-    .s-floor::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: rgba(28, 48, 63, 0.05); }
-    .s-exit-sign { position: absolute; top: 10px; right: 16px; background: var(--card-bg); color: var(--accent-color); padding: 4px 10px; border: 1px solid var(--accent-color); border-radius: 3px; font-size: 0.55rem; letter-spacing: 2px; font-weight: 700; }
-    .s-door { position: absolute; top: 14%; left: 50%; transform: translateX(-50%); width: 70px; height: 110px; background: var(--border-color); border: 2px solid var(--text-muted); border-radius: 4px 4px 0 0; }
-    .s-door-knob { position: absolute; left: 9px; top: 55%; width: 8px; height: 8px; background: var(--text-muted); border-radius: 50%; }
-    .s-seats { position: absolute; bottom: 6%; left: 0; right: 0; display: flex; justify-content: space-around; padding: 0 20px; align-items: flex-end; }
-    .s-group { display: flex; gap: 10px; align-items: flex-end; }
-    .s-unit { display: flex; flex-direction: column; align-items: center; }
-    .s-unit.annoyed { animation: s-shake .35s ease infinite alternate; }
-    @keyframes s-shake { 0% { transform: rotate(-2deg) } 100% { transform: rotate(2deg) } }
-    .s-chair { width: 42px; height: 13px; background: var(--text-muted); border-radius: 2px; position: relative; }
-    .s-chair::before { content: ''; position: absolute; top: -18px; left: 3px; right: 3px; height: 20px; background: #95a5a6; border-radius: 2px 2px 0 0; }
-    .s-chair::after { content: ''; position: absolute; bottom: -12px; left: 5px; right: 5px; height: 12px; background: #bdc3c7; }
+
     #s-waveCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .s-status-strip { background: var(--card-bg); border: 2px solid var(--text-color); border-radius: 6px; padding: 10px 16px; font-size: 0.65rem; color: var(--text-muted); display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-weight: bold; box-shadow: 0 4px 15px var(--shadow); }
     .s-pill { padding: 4px 12px; border-radius: 12px; font-size: 0.6rem; letter-spacing: 1px; font-weight: bold; }
@@ -260,16 +283,38 @@
     .s-heart.dead { filter: grayscale(1) opacity(.3); color: var(--text-muted); }
     .s-hint { font-size: 0.55rem; color: var(--text-muted); text-align: center; font-weight: bold; }
     @media (max-width: 900px) {
-        #menu-container { padding: 6rem 0 2.5rem 0; }
+        #menu-container { padding: 6rem 1rem 2.5rem 1rem; }
         .hub-logo { width: min(440px, 84vw); max-height: 140px; margin-bottom: 2rem; }
-        .theme-btn { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.65rem; }
-        .game-card { padding: 2rem; }
-        .game-card h2 { font-size: 1.7rem; }
+        .theme-btn { top: 12px; right: 12px; left: auto; padding: 10px 16px; font-size: 0.75rem; }
+        .game-card { padding: 2.5rem 2rem; }
+        .game-card h2 { font-size: 1.8rem; }
         .s-controls { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+        .hub-logo { width: 90vw; max-height: 100px; margin-bottom: 1.5rem; }
+        .team-note { font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 3rem; }
+        .games-grid { gap: 1.5rem; }
+        .game-card { padding: 2rem 1.5rem; border-radius: 16px; }
+        .game-card h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+        .game-icon { width: 70px; height: 70px; margin-bottom: 1.5rem; }
+        .play-btn { padding: 12px 20px; font-size: 0.85rem; letter-spacing: 1px; width: 100%; }
+        .theme-btn { padding: 8px 12px; font-size: 0.65rem; }
     }
 </style>
 </head>
 <body>
+
+<div id="high-score-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; flex-direction:column;">
+    <div class="high-score-glow" style="background:var(--card-bg); padding:3rem; border-radius:20px; border:3px solid var(--accent-color); text-align:center; color:var(--text-color);">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🏆</div>
+        <h2 style="font-family:'Bebas Neue',sans-serif; letter-spacing:8px; font-size:3rem; margin-bottom:0.5rem; color:var(--accent-color);">LEGENDARY PERFORMANCE</h2>
+        <p style="font-family:'Exo 2',sans-serif; margin-bottom:2rem; font-size:1.2rem; opacity:0.8; letter-spacing:1px;">YOU HAVE REACHED THE TOP OPERATORS LIST</p>
+        <p style="font-family:'Exo 2',sans-serif; margin-bottom:1rem; font-size:1rem; font-weight:bold;">ENTER YOUR CODENAME:</p>
+        <input type="text" id="hs-initials" maxlength="10" autocomplete="off" style="font-family:'Space Mono',monospace; font-size:2.2rem; width:280px; text-align:center; text-transform:uppercase; background:var(--glass-bg); color:var(--text-color); border:2px solid var(--border-color); border-radius:6px; margin-bottom:1.5rem; outline:none;" />
+        <br>
+        <button onclick="ScoreManager.submitScore()" style="padding:12px 24px; background:var(--text-color); color:var(--card-bg); border:none; border-radius:6px; font-family:'Exo 2',sans-serif; font-weight:800; cursor:pointer; letter-spacing:2px; font-size:1.1rem; transition:transform 0.2s;">SUBMIT SCORE</button>
+    </div>
+</div>
 
 <button class="back-btn" id="backBtn" type="button" onclick="showMenu()">BACK TO HUB</button>
 
@@ -278,12 +323,13 @@
     <button id="themeToggle" class="theme-btn" type="button">SWITCH THEME</button>
     <canvas id="hub-canvas"></canvas>
     
-    <div class="menu-header">
-        <img class="hub-logo" src="image.png" alt="ANC team logo">
-        <p class="team-note">RESEARCH DAY 2026 | TEAM 10</p>
-    </div>
-
-    <div class="games-grid">
+    <div class="hub-content">
+        <div class="menu-header">
+            <img class="hub-logo" src="image.png" alt="ANC team logo">
+            <p class="team-note">RESEARCH DAY 2026 | TEAM 10</p>
+        </div>
+    
+        <div class="games-grid">
         <div class="game-card card-wb" onclick="startWaveBreaker()">
             <svg class="game-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M50 10L80 25V55C80 75 50 90 50 90C50 90 20 75 20 55V25L50 10Z" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -303,10 +349,26 @@
             <span class="play-btn">Phase Sync</span>
         </div>
     </div>
+
+        <div class="leaderboard-section">
+            <h2 class="lb-title">TOP OPERATORS</h2>
+            <div class="lb-container">
+                <div class="lb-card">
+                    <h3>WAVE BREAKER</h3>
+                    <ol id="lb-wb-list"></ol>
+                </div>
+                <div class="lb-card">
+                    <h3>SILENCE</h3>
+                    <ol id="lb-silence-list"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- WAVE BREAKER -->
 <div id="wb-container">
+    <button id="wb-help-btn" type="button" onclick="WaveBreakerGame.showHelp()" style="position:absolute; top:20px; left:20px; padding: 8px 16px; background: rgba(0,0,0,0.5); border: 1px solid #8899aa; color: #8899aa; border-radius: 4px; cursor: pointer; font-family: 'Exo 2', sans-serif; z-index: 999; transition: all 0.3s;">HELP</button>
     <canvas id="wb-canvas"></canvas>
 </div>
 
@@ -334,7 +396,7 @@
 
         <div class="s-scene" id="s-scene" style="display:flex; justify-content:center; align-items:center; background:var(--wall);">
             <canvas id="s-waveCanvas"></canvas>
-            <div style="position:absolute; bottom:10px; font-size:0.8rem; color:var(--text-muted); font-weight:bold; letter-spacing:4px; opacity:0.5;">WAVEFORM VISUALIZER</div>
+            <div style="position:absolute; bottom:10px; font-size:0.8rem; color:var(--text-muted); font-weight:bold; letter-spacing:4px; opacity:0.5;">PHASE STABILIZER CORE</div>
         </div>
         <div class="s-status-strip">
             <span id="s-statusPill" class="s-pill s-pill-warn">NOISE ON</span>
@@ -427,55 +489,78 @@ function startHubAnimation() {
     
     function draw() {
         hubCtx.clearRect(0, 0, hubCanvas.width, hubCanvas.height);
-        hubPhase += 0.015;
+        hubPhase += 0.012;
         
         let cy = hubCanvas.height * 0.45;
         let w = hubCanvas.width;
+        let h = hubCanvas.height;
+        const isDark = document.body.classList.contains('dark-mode');
         
-        hubCtx.lineWidth = 2;
-        // Draw 5 elegant overlapping sine waves for more complexity
-        for(let l = 0; l < 5; l++) {
+        // Dynamic background glow
+        let bgGrad = hubCtx.createRadialGradient(w*0.5, cy, 0, w*0.5, cy, Math.max(w,h)*0.8);
+        if(isDark) {
+            bgGrad.addColorStop(0, 'rgba(88, 166, 255, 0.08)');
+            bgGrad.addColorStop(1, 'transparent');
+        } else {
+            bgGrad.addColorStop(0, 'rgba(39, 174, 96, 0.08)');
+            bgGrad.addColorStop(1, 'transparent');
+        }
+        hubCtx.fillStyle = bgGrad;
+        hubCtx.fillRect(0,0,w,h);
+        
+        hubCtx.lineWidth = 2.5;
+        // Draw 7 elegant overlapping sine waves for more complexity
+        for(let l = 0; l < 7; l++) {
             hubCtx.beginPath();
-            const isDark = document.body.classList.contains('dark-mode');
-            const color = isDark 
-                ? (l%2===0?'#58a6ff':(l%3===0?'#3fb950':'#8b949e')) 
-                : (l%2===0?'#1c303f':(l%3===0?'#27ae60':'#7f8c8d'));
             
-            hubCtx.strokeStyle = color;
-            hubCtx.globalAlpha = (0.4 - (l * 0.07)) * (isDark ? 0.8 : 0.5);
-            let amp = 40 + l * 25;
-            let freq = 0.0015 + l * 0.0008;
+            // Linear gradient across the screen for each wave
+            const grad = hubCtx.createLinearGradient(0, 0, w, 0);
+            if (isDark) {
+                grad.addColorStop(0, (l%2===0)?'#58a6ff':'#3fb950'); 
+                grad.addColorStop(1, (l%3===0)?'#8b949e':'#58a6ff');
+            } else {
+                grad.addColorStop(0, (l%2===0)?'#1c303f':'#27ae60'); 
+                grad.addColorStop(1, (l%3===0)?'#7f8c8d':'#1c303f');
+            }
+            hubCtx.strokeStyle = grad;
+            hubCtx.globalAlpha = (0.35 - (l * 0.04)) * (isDark ? 0.9 : 0.6);
             
-            for(let x = 0; x <= w; x += 8) {
-                let y = cy + Math.sin(x * freq + hubPhase + l) * amp * Math.sin(hubPhase * 0.4 + x * 0.0008);
+            let amp = 50 + l * 30 + Math.sin(hubPhase * 0.5 + l)*15;
+            let freq = 0.0012 + l * 0.0005;
+            
+            for(let x = 0; x <= w; x += 10) {
+                let y = cy + Math.sin(x * freq + hubPhase + l) * amp * Math.sin(hubPhase * 0.3 + x * 0.001);
                 if(x === 0) hubCtx.moveTo(x, y);
                 else hubCtx.lineTo(x, y);
             }
             hubCtx.stroke();
         }
 
-        // Add subtle floating interference points (particles)
-        for (let i = 0; i < 15; i++) {
-            const px = (w * 0.5) + Math.cos(hubPhase * 0.5 + i) * (w * 0.4);
-            const py = cy + Math.sin(hubPhase * 0.8 + i) * 100;
-            const size = 2 + Math.sin(hubPhase + i) * 1.5;
+        // Floating interference particles with glow
+        for (let i = 0; i < 20; i++) {
+            const px = (w * 0.5) + Math.cos(hubPhase * 0.4 + i) * (w * 0.45);
+            const py = cy + Math.sin(hubPhase * 0.7 + i) * 120;
+            const size = 2 + Math.sin(hubPhase * 1.5 + i) * 2;
             
             hubCtx.beginPath();
             hubCtx.arc(px, py, size, 0, Math.PI * 2);
-            hubCtx.fillStyle = document.body.classList.contains('dark-mode') ? '#58a6ff' : '#1c303f';
-            hubCtx.globalAlpha = 0.15;
+            hubCtx.fillStyle = isDark ? '#58a6ff' : '#27ae60';
+            hubCtx.globalAlpha = 0.3 + Math.sin(hubPhase + i)*0.2;
+            hubCtx.shadowBlur = 10;
+            hubCtx.shadowColor = hubCtx.fillStyle;
             hubCtx.fill();
+            hubCtx.shadowBlur = 0;
         }
 
         // Center pulse rings
-        for (let i = 0; i < 4; i++) {
-            const r = 100 + i * 65 + Math.sin(hubPhase * 1.3 + i) * 10;
+        for (let i = 0; i < 5; i++) {
+            const r = 80 + i * 50 + Math.sin(hubPhase * 1.5 + i) * 15;
             hubCtx.beginPath();
             hubCtx.arc(w * 0.5, cy, r, 0, Math.PI * 2);
-            hubCtx.strokeStyle = document.body.classList.contains('dark-mode')
-                ? `rgba(88,166,255,${0.1 - i * 0.02})`
-                : `rgba(28,48,63,${0.1 - i * 0.02})`;
-            hubCtx.lineWidth = 1.2;
+            hubCtx.strokeStyle = isDark
+                ? `rgba(88,166,255,${0.15 - i * 0.025})`
+                : `rgba(39,174,96,${0.15 - i * 0.025})`;
+            hubCtx.lineWidth = 1.5;
             hubCtx.stroke();
         }
         hubCtx.globalAlpha = 1;
@@ -493,14 +578,160 @@ function stopHubAnimation() {
     }
 }
 
+const ScoreManager = {
+    pendingScore: null,
+    pendingGame: null,
+    
+    // ==========================================
+    // ADD YOUR FIREBASE DATABASE URL BELOW:
+    // Make sure it ends without a trailing slash, e.g., 'https://anc-leaderboards-default-rtdb.firebaseio.com'
+    // ==========================================
+    DB_URL: 'https://anc-leaderboards-default-rtdb.europe-west1.firebasedatabase.app',
+    
+    cachedScores: { 'WB': [], 'SILENCE': [] },
+    hasLoaded: false,
+
+    fetchScores: async function() {
+        if (this.DB_URL.includes('YOUR-FIREBASE-PROJECT')) {
+            console.warn('ANC Dashboard: Please add your Firebase Database URL to ScoreManager.DB_URL');
+            this.hasLoaded = true;
+            this.renderLeaderboards();
+            return;
+        }
+
+        try {
+            // Fetch both leaderboards instantly from Firebase
+            const fetchOne = async (game) => {
+                const res = await fetch(`${this.DB_URL}/leaderboards/${game}.json`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                if (!data) return [];
+                
+                // Convert Firebase object to array
+                const entries = Object.keys(data).map(key => ({
+                    id: key,
+                    name: data[key].name,
+                    score: parseInt(data[key].score)
+                }));
+                
+                return entries.sort((a,b) => b.score - a.score);
+            };
+
+            const [wb, sil] = await Promise.all([fetchOne('WB'), fetchOne('SILENCE')]);
+            this.cachedScores['WB'] = wb;
+            this.cachedScores['SILENCE'] = sil;
+            
+            this.hasLoaded = true;
+            this.renderLeaderboards();
+        } catch (e) {
+            console.warn('Firebase fetch failed:', e);
+            this.hasLoaded = true;
+            this.renderLeaderboards();
+        }
+    },
+
+    saveScore: async function(game, name, score) {
+        if (this.DB_URL.includes('YOUR-FIREBASE-PROJECT')) return;
+        
+        name = (name || '???').toUpperCase().substring(0,10);
+        
+        // Optimistic local update (instantly shows on screen)
+        this.cachedScores[game].push({name: name, score: score});
+        this.cachedScores[game].sort((a,b) => b.score - a.score);
+        this.cachedScores[game] = this.cachedScores[game].slice(0, 4); // Keep local to 4 max
+        this.renderLeaderboards();
+
+        try {
+            // Send the new score directly to Firebase
+            const newEntry = { name: name, score: score, timestamp: Date.now() };
+            await fetch(`${this.DB_URL}/leaderboards/${game}.json`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newEntry)
+            });
+            
+            // Re-fetch to get the newly generated unique IDs
+            await this.fetchScores();
+            
+            // Trim to top 4 people
+            if (this.cachedScores[game].length > 4) {
+                // Delete everything from the 5th place downwards
+                const toDelete = this.cachedScores[game].slice(4);
+                await Promise.all(toDelete.map(entry => {
+                    return fetch(`${this.DB_URL}/leaderboards/${game}/${entry.id}.json`, {
+                        method: 'DELETE'
+                    });
+                }));
+                this.fetchScores(); // Final refresh to sync UI
+            }
+        } catch(e) {
+            console.error('Firebase save error:', e);
+        }
+    },
+
+    isHighScore: function(game, score) {
+        if(score <= 0) return false;
+        let scores = this.cachedScores[game] || [];
+        if (scores.length < 3) return true;
+        return score > scores[2].score;
+    },
+
+    promptHighScore: function(game, score) {
+        this.pendingScore = score;
+        this.pendingGame = game;
+        document.getElementById('high-score-modal').style.display = 'flex';
+        // Play high-score fanfare
+        if (typeof WaveBreakerGame !== 'undefined' && WaveBreakerGame.playFanfare) WaveBreakerGame.playFanfare();
+        setTimeout(() => document.getElementById('hs-initials').focus(), 100);
+    },
+
+    submitScore: function() {
+        const initials = document.getElementById('hs-initials').value.trim() || '???';
+        console.log('Submitting high score:', initials, this.pendingScore);
+        this.saveScore(this.pendingGame, initials, this.pendingScore);
+        document.getElementById('high-score-modal').style.display = 'none';
+        showMenu();
+    },
+
+    renderLeaderboards: function() {
+        const renderList = (game, id) => {
+            let scores = this.cachedScores[game] || [];
+            const list = document.getElementById(id);
+            if(!list) return;
+
+            if (!this.hasLoaded && scores.length === 0) {
+                list.innerHTML = `<li style="opacity:0.5; font-size:0.8rem; justify-content:center;">FETCHING GLOBAL DATA...</li>`;
+                return;
+            }
+
+            if (scores.length === 0) {
+                // If loaded but still empty, show placeholders or "No scores"
+                scores = [{name: 'ANC', score: 500}, {name: 'RDY', score: 300}, {name: 'T10', score: 100}];
+            }
+            
+            scores = scores.slice(0, 3);
+            list.innerHTML = scores.map((s, i) => `
+                <li style="${i === 0 ? 'color:var(--accent-color); font-weight:bold;' : ''}">
+                    <span>${i + 1}. ${s.name}</span>
+                    <span>${s.score}</span>
+                </li>
+            `).join('');
+        };
+        renderList('WB', 'lb-wb-list');
+        renderList('SILENCE', 'lb-silence-list');
+    }
+};
+
 window.addEventListener('load', () => {
     initTheme();
+    ScoreManager.fetchScores();
     startHubAnimation();
 });
 
 function showMenu() {
     WaveBreakerGame.stop();
     SilenceGame.stop();
+    ScoreManager.fetchScores();
     startHubAnimation();
     document.getElementById('menu-container').style.display = 'flex';
     document.getElementById('wb-container').style.display = 'none';
@@ -541,7 +772,7 @@ const WaveBreakerGame = (function() {
         };
     }
     let C = getC();
-    const SHIELD_RADIUS = 70;
+    let SHIELD_RADIUS = window.innerWidth < 600 ? 50 : 70;
     const MAX_PROJECTILES = 16;
     
     let canvas, ctx, W, H, cx, cy;
@@ -549,7 +780,7 @@ const WaveBreakerGame = (function() {
     let score=0, combo=0, multiplier=1, shield=100, maxShield=100;
     let enemies=[], bullets=[], particles=[], popups=[], bgParticles=[];
     let shakeX=0, shakeY=0, shakeDur=0;
-    let flashAlpha=0, vignetteAlpha=0;
+    let flashAlpha=0, vignetteAlpha=0, flashColor='255,255,255';
     let waveCount=0, spawnTimer=0, spawnInterval=3.5;
     let oscPhase=0, pulsePhase=0, gameTime=0, lastTime=0;
     let tutorialStep=0;
@@ -580,6 +811,12 @@ const WaveBreakerGame = (function() {
     function playCancelSound(){ playTone(880,0.3,'sine',0.2); playTone(1320,0.2,'sine',0.1); }
     function playHitSound(){ playTone(110,0.4,'sawtooth',0.25); playTone(55,0.3,'square',0.15); }
     function playShootSound(){ playTone(1200,0.1,'sine',0.1); }
+    function playFanfare(){
+        playTone(523.25, 0.2, 'sine', 0.2); // C5
+        setTimeout(() => playTone(659.25, 0.2, 'sine', 0.2), 150); // E5
+        setTimeout(() => playTone(783.99, 0.4, 'sine', 0.2), 300); // G5
+        setTimeout(() => playTone(1046.50, 0.6, 'sine', 0.3), 450); // C6
+    }
     
     // Particles
     class Particle {
@@ -775,7 +1012,7 @@ const WaveBreakerGame = (function() {
       spawnRing(x,y,C.GREEN,24,200,0.8);
       spawnBurst(x,y,C.GREEN,30,180,1,3);
       spawnBurst(x,y,C.WHITE,10,100,0.5,2);
-      flashAlpha=0.3;
+      flashAlpha=0.3; flashColor='255,255,255';
       combo++;
       if(combo>=3) multiplier=Math.min(5,Math.floor(combo/3)+1);
       let pts=10*multiplier;
@@ -797,6 +1034,7 @@ const WaveBreakerGame = (function() {
     function weakCancel(x,y){
       playTone(520,0.12,'sine',0.08);
       spawnBurst(x,y,C.WARN,10,100,0.5,2);
+      flashAlpha=0.15; flashColor='243,156,18'; // Orange/Warn
       popups.push(new Popup(x,y,'WEAK CANCEL',C.WARN));
       combo=0; multiplier=1;
     }
@@ -806,10 +1044,14 @@ const WaveBreakerGame = (function() {
       shakeDur=0.15; shakeX=(Math.random()-0.5)*6; shakeY=(Math.random()-0.5)*6;
       spawnBurst(x,y,C.ORANGE,25,150,0.8,3);
       spawnBurst(x,y,C.ENEMY,15,100,0.6,2);
+      flashAlpha=0.4; flashColor='231,76,60'; // Red/Hit
       shield=Math.max(0,shield-8);
       popups.push(new Popup(x,y,'CONSTRUCTIVE!',C.ORANGE));
       combo=0; multiplier=1;
-      if(shield<=0) gameState='GAME_OVER';
+      if(shield<=0) {
+          gameState='GAME_OVER';
+          if(ScoreManager.isHighScore('WB', score)) setTimeout(() => ScoreManager.promptHighScore('WB', score), 1500);
+      }
     }
     
     function enemyHit(){
@@ -822,7 +1064,10 @@ const WaveBreakerGame = (function() {
       score=Math.max(0,score-15);
       combo=0; multiplier=1;
       popups.push(new Popup(cx,cy-40,'-15',C.ENEMY));
-      if(shield<=0){ gameState='GAME_OVER'; }
+      if(shield<=0) {
+          gameState='GAME_OVER';
+          if(ScoreManager.isHighScore('WB', score)) setTimeout(() => ScoreManager.promptHighScore('WB', score), 1500);
+      }
     }
     
     // Spawn logic
@@ -874,7 +1119,7 @@ const WaveBreakerGame = (function() {
     function drawPlayer(dt){
       pulsePhase+=dt*2;
       let pulse=1+Math.sin(pulsePhase)*0.08;
-      let r=25*pulse;
+      let r=(window.innerWidth < 600 ? 15 : 25)*pulse;
     
       // ── SHIELD RING ── visible barrier around player
       let shieldPct=shield/maxShield;
@@ -961,27 +1206,6 @@ const WaveBreakerGame = (function() {
         ctx.fillText('DESTRUCTIVE CHAIN',W-20,60);
         ctx.shadowBlur=0;
       }
-      // Shield bar
-      let bw=Math.min(300,W*0.4), bh=14, bx=(W-bw)/2, by=H-40;
-      ctx.fillStyle=C.SHIELD_BG;
-      ctx.beginPath();
-      roundRect(ctx,bx,by,bw,bh,7); ctx.fill();
-      let fill=bw*(shield/maxShield);
-      let sg=ctx.createLinearGradient(bx,by,bx+fill,by);
-      sg.addColorStop(0,'#7f8c8d'); sg.addColorStop(1,C.PLAYER);
-      ctx.fillStyle=sg;
-      ctx.beginPath(); roundRect(ctx,bx,by,fill,bh,7); ctx.fill();
-      // Segments
-      ctx.strokeStyle='rgba(255,255,255,1)'; ctx.lineWidth=1;
-      for(let i=1;i<10;i++){
-        let sx=bx+bw*i/10;
-        ctx.beginPath(); ctx.moveTo(sx,by); ctx.lineTo(sx,by+bh); ctx.stroke();
-      }
-      ctx.fillStyle=C.PLAYER; ctx.font='bold 11px Orbitron'; ctx.textAlign='center';
-      const bulletColor = readyProjectiles > 0 ? C.GREEN : C.ENEMY;
-      ctx.fillStyle=bulletColor;
-      ctx.font='bold 11px "Exo 2"';
-      ctx.fillText(shieldStatusText,W/2,by-6);
       // Wave count
       let inc=enemies.filter(e=>e.alive).length;
       if(inc>0){
@@ -999,7 +1223,7 @@ const WaveBreakerGame = (function() {
     
     function drawEffects(dt){
       if(flashAlpha>0){
-        ctx.fillStyle=`rgba(255,255,255,${flashAlpha})`;
+        ctx.fillStyle=`rgba(${flashColor},${flashAlpha})`;
         ctx.fillRect(0,0,W,H); flashAlpha-=dt*2;
       }
       if(vignetteAlpha>0){
@@ -1075,7 +1299,7 @@ const WaveBreakerGame = (function() {
       score=0;combo=0;multiplier=1;shield=100;
       enemies=[];bullets=[];particles=[];popups=[];
       spawnTimer=0;spawnInterval=2.5;waveCount=0;gameTime=0;
-      shakeDur=0;flashAlpha=0;vignetteAlpha=0;
+      shakeDur=0;flashAlpha=0;vignetteAlpha=0;flashColor='255,255,255';
     }
     
     function update(dt){
@@ -1176,6 +1400,7 @@ const WaveBreakerGame = (function() {
                 W=canvas.width=window.innerWidth; 
                 H=canvas.height=window.innerHeight; 
                 cx=W/2; cy=H/2; 
+                SHIELD_RADIUS = W < 600 ? 50 : 70;
             };
             window.addEventListener('resize', resizeHandler);
             
@@ -1213,7 +1438,14 @@ const WaveBreakerGame = (function() {
             keyHandler = null;
             clickHandler = null;
             touchHandler = null;
-        }
+        },
+        showHelp: function() {
+            if (gameState === 'PLAYING' || gameState === 'MENU') {
+                gameState = 'TUTORIAL';
+                tutorialStep = 0;
+            }
+        },
+        playFanfare: playFanfare
     };
 })();
 
@@ -1275,45 +1507,61 @@ const SilenceGame = (function() {
         resizeG();
     }
 
-    function drawSceneLine(cfg, col, yCtr, ampS, ps) {
-        const W = sCanvas.width;
-        for (let l = 0; l < cfg.sceneLayers; l++) {
-            const amp = Math.min(40, 34 * cfg.amp) * (1 - l * .12) * ampS;
-            const fr = cfg.sceneFreq * (1 + l * .28);
-            const yOff = (l - (cfg.sceneLayers - 1) / 2) * amp * .6;
-            sctx.beginPath();
-            for (let x = 0; x <= W; x += 2) {
-                const y = yCtr + yOff + Math.sin(x * fr + sceneStk * cfg.sceneSpeed + ps + l * 1.2) * amp;
-                x === 0 ? sctx.moveTo(x, y) : sctx.lineTo(x, y);
-            }
-            sctx.strokeStyle = col + (.65 - l * .08) * ampS + ')'; sctx.lineWidth = 2.5;
-            sctx.stroke();
-        }
-    }
-
     function drawScene() {
         const W = sCanvas.width, H = sCanvas.height;
         sctx.clearRect(0, 0, W, H); sceneStk++;
         if (cancelDir === 1 && cancelProg < 1) cancelProg = Math.min(1, cancelProg + .02);
         else if (cancelDir === -1 && cancelProg > 0) cancelProg = Math.max(0, cancelProg - .02);
 
-        const cfg = PROFILE;
+        const cx = W / 2, cy = H / 2;
+        const baseRadius = Math.min(W, H) * 0.35;
+        
+        const isDark = document.body.classList.contains('dark-mode');
+        const noiseColor = isDark ? '#8b949e' : '#7f8c8d';
+        const stableColor = isDark ? '#3fb950' : '#27ae60';
 
-        if (cancelProg > 0.05) {
-            const ampS = 1 - cancelProg;
-            const nY = H * (0.28 + cancelProg * .18);
-            const aY = H * (0.68 - cancelProg * .18);
-            drawSceneLine(cfg, cfg.color, nY, ampS, 0);
-            drawSceneLine(cfg, 'rgba(28,48,63,', aY, ampS, Math.PI);
-            if (cancelProg > 0.5) {
-                const fa = (cancelProg - .5) * 2 * .7;
-                sctx.beginPath(); sctx.moveTo(0, H * .48); sctx.lineTo(W, H * .48);
-                sctx.strokeStyle = 'rgba(39,174,96,' + fa + ')'; sctx.lineWidth = 2;
-                sctx.setLineDash([8, 5]); sctx.stroke(); sctx.setLineDash([]);
+        // Background glow
+        let bgGrad = sctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius * 2.5);
+        bgGrad.addColorStop(0, isDark ? `rgba(63, 185, 80, ${cancelProg * 0.15})` : `rgba(39, 174, 96, ${cancelProg * 0.15})`);
+        bgGrad.addColorStop(1, 'transparent');
+        sctx.fillStyle = bgGrad;
+        sctx.fillRect(0,0,W,H);
+
+        // Draw multiple rings
+        for (let i = 0; i < 4; i++) {
+            sctx.beginPath();
+            let segs = 60;
+            for (let s = 0; s <= segs; s++) {
+                let a = (s / segs) * Math.PI * 2;
+                
+                // Chaos factor: random noise based on sine waves, reduced by cancelProg
+                let chaos = (1 - cancelProg) * (Math.sin(a * (8 + i*2) + sceneStk * 0.1) * 15 + Math.cos(a * 15 - sceneStk * 0.2) * 10);
+                
+                let r = baseRadius - i * 15 + chaos;
+                let px = cx + Math.cos(a) * r;
+                let py = cy + Math.sin(a) * r;
+                
+                if (s === 0) sctx.moveTo(px, py);
+                else sctx.lineTo(px, py);
             }
-        } else {
-            drawSceneLine(cfg, cfg.color, H * .45, 1, 0);
+            sctx.closePath();
+            
+            // Interpolate color between noise and stable
+            sctx.strokeStyle = cancelProg > 0.5 ? stableColor : noiseColor;
+            sctx.lineWidth = 2;
+            sctx.globalAlpha = 0.4 + (i * 0.15) + (cancelProg * 0.2);
+            sctx.stroke();
         }
+        
+        // Draw inner stable core
+        if (cancelProg > 0.2) {
+            sctx.beginPath();
+            sctx.arc(cx, cy, baseRadius * 0.4 * cancelProg, 0, Math.PI * 2);
+            sctx.fillStyle = stableColor;
+            sctx.globalAlpha = cancelProg * 0.5;
+            sctx.fill();
+        }
+        sctx.globalAlpha = 1;
     }
 
     function drawGameWave() {
@@ -1325,7 +1573,16 @@ const SilenceGame = (function() {
         const mid = H / 2, amp = (H / 2 - 14) * noiseAmp;
         const cycles = PROFILE.cycles;
         const sampleWave = (x01, basePhase) => {
-            return Math.sin(2 * Math.PI * x01 * cycles + basePhase);
+            let val = 0;
+            let totalAmp = 0;
+            for (let i = 0; i < level; i++) {
+                let freqMult = i + 1;
+                let amp = 1 / Math.pow(1.5, i);
+                let pShift = (i * Math.PI / 3);
+                val += Math.sin(2 * Math.PI * x01 * cycles * freqMult + basePhase * freqMult + pShift) * amp;
+                totalAmp += amp;
+            }
+            return val / totalAmp;
         };
         
         // Incoming noise
@@ -1422,23 +1679,32 @@ const SilenceGame = (function() {
         const nl = Math.floor(score / 500) + 1;
         if (nl > level) {
             level = nl;
-            windowTol = Math.max(.12, .25 - (level - 1) * .015);
+            windowTol = Math.max(.20, .35 - (level - 1) * .02);
             document.getElementById('s-windowSize').textContent = '±' + Math.round(windowTol * 100) + '%';
             document.getElementById('s-noiseFreqDisp').textContent = (((PROFILE.freq + (level - 1) * 0.14) * 10) | 0);
+            
+            // Surprise: add harmonic complexity
+            PROFILE.name = 'HARMONICS: ' + level;
             document.getElementById('s-noiseTypeDisp').textContent = PROFILE.name;
-            showResult('LEVEL ' + level, 's-rf-good');
+            
+            // Reset lives
+            lives = 3;
+            updateHUD();
+            
+            showResult('LEVEL ' + level + ' - LIVES RESTORED', 's-rf-good');
         }
     }
 
     return {
         start: function() {
             initScene();
-            score = 0; combo = 1; lives = 3; level = 1; noiseFreq = PROFILE.freq; noiseAmp = PROFILE.amp; windowTol = 0.25; phase = 0;
+            score = 0; combo = 1; lives = 3; level = 1; noiseFreq = PROFILE.freq; noiseAmp = PROFILE.amp; windowTol = 0.45; phase = 0;
             cancelStrength = 0; cancelDecay = 0; antiActive = false; antiDecay = 0;
+            PROFILE.name = 'HARMONICS: 1';
             lastMood = ''; // force update
             isRunning = true;
             document.getElementById('s-goOverlay').classList.remove('show');
-            document.getElementById('s-windowSize').textContent = '±25%';
+            document.getElementById('s-windowSize').textContent = '±45%';
             document.getElementById('s-noiseFreqDisp').textContent = ((PROFILE.freq * 10) | 0);
             document.getElementById('s-noiseTypeDisp').textContent = PROFILE.name;
             updateHUD();
@@ -1488,6 +1754,12 @@ const SilenceGame = (function() {
             document.getElementById('s-goScore').textContent = 'SCORE: ' + score;
             const msgs = ['NOISE OVERWHELMED THE SYSTEM.', 'TIMING OFF — WATCH THE PHASE!', 'MULTIPLE MISSES DETECTED. RETRY?'];
             document.getElementById('s-goMsg').textContent = msgs[score % msgs.length];
+            if(ScoreManager.isHighScore('SILENCE', score)) {
+                setTimeout(() => {
+                    document.getElementById('s-goOverlay').classList.remove('show');
+                    ScoreManager.promptHighScore('SILENCE', score);
+                }, 1500);
+            }
         },
         restartGame: function() {
             this.start();
