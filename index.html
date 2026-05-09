@@ -591,6 +591,17 @@ const ScoreManager = {
     cachedScores: { 'WB': [], 'SILENCE': [] },
     hasLoaded: false,
 
+    generateSig: function(name, score, timestamp) {
+        const salt = "ANC_RESEARCH_DEFENSE_2026";
+        const str = String(name) + String(score) + String(timestamp) + salt;
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(16);
+    },
+
     fetchScores: async function() {
         if (this.DB_URL.includes('YOUR-FIREBASE-PROJECT')) {
             console.warn('ANC Dashboard: Please add your Firebase Database URL to ScoreManager.DB_URL');
@@ -608,13 +619,22 @@ const ScoreManager = {
                 if (!data) return [];
                 
                 // Convert Firebase object to array
-                const entries = Object.keys(data).map(key => ({
+                let entries = Object.keys(data).map(key => ({
                     id: key,
                     name: data[key].name,
-                    score: parseInt(data[key].score)
+                    score: parseInt(data[key].score),
+                    timestamp: data[key].timestamp,
+                    sig: data[key].sig
                 }));
                 
-                return entries.sort((a,b) => b.score - a.score);
+                // SHADOW BAN: Filter out hacker scores with invalid signatures
+                entries = entries.filter(e => {
+                    if (!e.sig || !e.timestamp) return false;
+                    const expectedSig = this.generateSig(e.name, e.score, e.timestamp);
+                    return e.sig === expectedSig;
+                });
+                
+                return entries.sort((a,b) => b.score - a.score).slice(0, 4);
             };
 
             const [wb, sil] = await Promise.all([fetchOne('WB'), fetchOne('SILENCE')]);
@@ -634,6 +654,8 @@ const ScoreManager = {
         if (this.DB_URL.includes('YOUR-FIREBASE-PROJECT')) return;
         
         name = (name || '???').toUpperCase().substring(0,10);
+        const timestamp = Date.now();
+        const sig = this.generateSig(name, score, timestamp);
         
         // Optimistic local update (instantly shows on screen)
         this.cachedScores[game].push({name: name, score: score});
@@ -642,28 +664,19 @@ const ScoreManager = {
         this.renderLeaderboards();
 
         try {
-            // Send the new score directly to Firebase
-            const newEntry = { name: name, score: score, timestamp: Date.now() };
+            // Send the new score directly to Firebase with the security signature
+            const newEntry = { name: name, score: score, timestamp: timestamp, sig: sig };
             await fetch(`${this.DB_URL}/leaderboards/${game}.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newEntry)
             });
             
-            // Re-fetch to get the newly generated unique IDs
+            // Re-fetch to sync
             await this.fetchScores();
             
-            // Trim to top 4 people
-            if (this.cachedScores[game].length > 4) {
-                // Delete everything from the 5th place downwards
-                const toDelete = this.cachedScores[game].slice(4);
-                await Promise.all(toDelete.map(entry => {
-                    return fetch(`${this.DB_URL}/leaderboards/${game}/${entry.id}.json`, {
-                        method: 'DELETE'
-                    });
-                }));
-                this.fetchScores(); // Final refresh to sync UI
-            }
+            // NOTE: We no longer send DELETE requests. This prevents hackers from wiping the DB.
+            // Firebase stores all historical scores safely, and fetchScores filters the Top 4.
         } catch(e) {
             console.error('Firebase save error:', e);
         }
@@ -879,32 +892,27 @@ const WaveBreakerGame = (function() {
     class EnemyWave {
       constructor(type){
         this.type=type||'normal';
-        let angle=Math.random()*Math.PI*2;
-        let dist=Math.max(W,H)*0.7;
-        this.x=cx+Math.cos(angle)*dist; this.y=cy+Math.sin(angle)*dist;
+        this.angle=Math.random()*Math.PI*2;
+        this.distance=Math.max(W,H)*0.7;
         this.speed=40+Math.random()*70+score*0.2;
         this.sweetSpot=SHIELD_RADIUS+40+Math.random()*80;
         this.radius=0; this.maxRadius=30+Math.random()*20;
         this.arcWidth=1.2+Math.random()*0.4;
-        this.angle=Math.atan2(cy-this.y,cx-this.x);
         this.phase=0; this.alive=true; this.spawnAnim=1;
         this.opacity=0.7+Math.random()*0.3;
       }
-      distToCenter(){ return Math.hypot(this.x-cx,this.y-cy); }
-      progress(){ let maxD=Math.max(W,H)*0.7-SHIELD_RADIUS; return 1-Math.min(1,(this.distToCenter()-SHIELD_RADIUS)/maxD); }
+      get x() { return cx + Math.cos(this.angle) * this.distance; }
+      get y() { return cy + Math.sin(this.angle) * this.distance; }
+      distToCenter(){ return this.distance; }
+      progress(){ let maxD=Math.max(W,H)*0.7-SHIELD_RADIUS; return 1-Math.min(1,(this.distance-SHIELD_RADIUS)/maxD); }
       update(dt){
         this.phase+=dt*8;
         this.spawnAnim=Math.max(0,this.spawnAnim-dt*3);
-        let dx=cx-this.x, dy=cy-this.y, d=Math.hypot(dx,dy);
-        // Always face toward center
-        this.angle=Math.atan2(cy-this.y,cx-this.x);
-        if(d>5){
-          this.x+=dx/d*this.speed*dt;
-          this.y+=dy/d*this.speed*dt;
+        if(this.distance>5){
+          this.distance -= this.speed*dt;
         }
-        this.inSweetSpot = Math.abs(this.distToCenter() - this.sweetSpot) < 50;
-        // Hit when reaching the shield ring, not center
-        if(d<SHIELD_RADIUS){ this.alive=false; return 'hit'; }
+        this.inSweetSpot = Math.abs(this.distance - this.sweetSpot) < 50;
+        if(this.distance<SHIELD_RADIUS){ this.alive=false; return 'hit'; }
         return null;
       }
       draw(){
@@ -937,25 +945,25 @@ const WaveBreakerGame = (function() {
     // Player Bullet
     class Bullet {
       constructor(tx,ty){
-        this.x=cx;this.y=cy;
-        let a=Math.atan2(ty-cy,tx-cx);
-        // Speed is intentionally varied to feel more physical.
+        this.angle=Math.atan2(ty-cy,tx-cx);
+        this.distance = 0;
         this.speed = 800 + Math.random() * 200;
-        this.vx=Math.cos(a)*this.speed; this.vy=Math.sin(a)*this.speed;
         this.armTime = 0.05 + Math.random() * 0.1;
         this.armElapsed = 0;
         this.isArmed = false;
         this.seed = Math.random() * 1000;
-        this.angle=a; this.life=2; this.radius=0; this.phase=0; this.alive=true;
+        this.life=2; this.radius=0; this.phase=0; this.alive=true;
       }
+      get x() { return cx + Math.cos(this.angle) * this.distance; }
+      get y() { return cy + Math.sin(this.angle) * this.distance; }
       update(dt){
         const wobble = 1 + Math.sin(this.armElapsed * 10 + this.seed) * 0.04;
-        this.x += this.vx * dt * wobble;
-        this.y += this.vy * dt * wobble;
+        this.distance += this.speed * dt * wobble;
         this.life-=dt; this.phase+=dt*10; this.radius+=dt*60;
         this.armElapsed += dt;
         this.isArmed = this.armElapsed >= this.armTime;
-        if(this.life<=0||this.x<-100||this.x>W+100||this.y<-100||this.y>H+100) this.alive=false;
+        let currentX = this.x; let currentY = this.y;
+        if(this.life<=0||currentX<-100||currentX>W+100||currentY<-100||currentY>H+100) this.alive=false;
       }
       draw(){
         ctx.save(); ctx.translate(this.x,this.y);
@@ -1081,7 +1089,8 @@ const WaveBreakerGame = (function() {
       playTone(parseInt(e.freq)||440,0.15,'sine',0.05);
       if(score >= 90 && Math.random() > 0.7){
         let e2=new EnemyWave('normal');
-        e2.x=e.x+Math.random()*60-30; e2.y=e.y+Math.random()*60-30;
+        e2.angle = e.angle + (Math.random() * 0.4 - 0.2); // slight angular offset
+        e2.distance = e.distance + (Math.random() * 40 - 20); // slight distance offset
         enemies.push(e2);
       }
     }
@@ -1191,25 +1200,30 @@ const WaveBreakerGame = (function() {
     
     function drawHUD(){
       // Score
-      ctx.fillStyle=C.HUD; ctx.font='bold 28px Orbitron'; ctx.textAlign='left';
+      let scoreLabel = Math.min(W * 0.06, 28);
+      let scoreVal = Math.min(W * 0.08, 36);
+      ctx.fillStyle=C.HUD; ctx.font='bold '+scoreLabel+'px Orbitron'; ctx.textAlign='left';
       ctx.shadowColor=C.HUD; ctx.shadowBlur=15;
-      ctx.fillText('SCORE',20,40);
-      ctx.font='bold 36px Orbitron';
-      ctx.fillText(score,20,78);
+      ctx.fillText('SCORE',20, Math.max(40, scoreLabel + 10));
+      ctx.font='bold '+scoreVal+'px Orbitron';
+      ctx.fillText(score,20, Math.max(40, scoreLabel + 10) + scoreVal + 5);
       ctx.shadowBlur=0;
       // Combo
       if(multiplier>1){
-        ctx.textAlign='right'; ctx.font='bold 22px Orbitron';
+        let comboSize = Math.min(W * 0.05, 22);
+        ctx.textAlign='right'; ctx.font='bold '+comboSize+'px Orbitron';
         ctx.fillStyle=C.GREEN; ctx.shadowColor=C.GREEN; ctx.shadowBlur=10;
-        ctx.fillText('x'+multiplier,W-20,40);
-        ctx.font='14px "Exo 2"'; ctx.fillStyle=C.PLAYER;
-        ctx.fillText('DESTRUCTIVE CHAIN',W-20,60);
+        ctx.fillText('x'+multiplier,W-20, Math.max(40, scoreLabel + 10));
+        let csubSize = Math.max(10, comboSize * 0.6);
+        ctx.font=csubSize+'px "Exo 2"'; ctx.fillStyle=C.PLAYER;
+        ctx.fillText('DESTRUCTIVE CHAIN',W-20, Math.max(40, scoreLabel + 10) + comboSize + 5);
         ctx.shadowBlur=0;
       }
       // Wave count
       let inc=enemies.filter(e=>e.alive).length;
       if(inc>0){
-        ctx.textAlign='left'; ctx.font='bold 14px "Exo 2"'; ctx.fillStyle=C.ORANGE;
+        let waveSize = Math.min(W * 0.04, 14);
+        ctx.textAlign='left'; ctx.font='bold '+waveSize+'px "Exo 2"'; ctx.fillStyle=C.ORANGE;
         ctx.fillText('\u26A1 '+inc+' INCOMING',20,H-25);
       }
     }
@@ -1238,17 +1252,20 @@ const WaveBreakerGame = (function() {
     // ── Menu / Game Over Screens ──
     function drawMenu(){
       drawBG(0.016);
-      // Title
-      ctx.fillStyle=C.PLAYER; ctx.font='bold 48px Orbitron'; ctx.textAlign='center';
+      let titleSize = Math.min(W * 0.1, 48);
+      ctx.fillStyle=C.PLAYER; ctx.font='bold '+titleSize+'px Orbitron'; ctx.textAlign='center';
       ctx.fillText('WAVE BREAKER',cx,cy-80);
-      ctx.fillStyle='#7f8c8d'; ctx.font='16px "Exo 2"';
+      let subSize = Math.max(12, titleSize * 0.33);
+      ctx.fillStyle='#7f8c8d'; ctx.font=subSize+'px "Exo 2"';
       ctx.fillText('Noise Cancellation Survival',cx,cy-45);
-      // Start button
-      ctx.fillStyle=C.PLAYER; ctx.font='bold 22px Orbitron';
+      
+      let btnSize = Math.max(14, titleSize * 0.45);
+      ctx.fillStyle=C.PLAYER; ctx.font='bold '+btnSize+'px Orbitron';
       let pulse=1+Math.sin(Date.now()*0.003)*0.05;
       ctx.globalAlpha=0.8+Math.sin(Date.now()*0.003)*0.2;
       ctx.fillText('[ CLICK TO START ]',cx,cy+20);
       ctx.globalAlpha=1;
+      
       // How to play
       ctx.fillStyle='#7f8c8d'; ctx.font='14px "Exo 2"';
       ctx.fillText('Press H for How to Play',cx,cy+60);
@@ -1260,20 +1277,25 @@ const WaveBreakerGame = (function() {
       ctx.strokeStyle=C.ENEMY; ctx.lineWidth=2;
       ctx.beginPath();
       let flatY=cy-40;
-      for(let x=cx-150;x<cx+150;x+=2){
+      let flatWidth = Math.min(300, W * 0.8);
+      let startX = cx - flatWidth/2;
+      for(let x=startX;x<startX+flatWidth;x+=2){
         let v=0;
         if(Math.abs(x-cx)<5) v=-30;
         else if(Math.abs(x-cx)<10) v=15;
-        x===cx-150?ctx.moveTo(x,flatY+v):ctx.lineTo(x,flatY+v);
+        x===startX?ctx.moveTo(x,flatY+v):ctx.lineTo(x,flatY+v);
       }
       ctx.stroke();
-      ctx.fillStyle=C.ENEMY; ctx.font='bold 40px Orbitron'; ctx.textAlign='center';
+      let goSize = Math.min(W * 0.08, 40);
+      ctx.fillStyle=C.ENEMY; ctx.font='bold '+goSize+'px Orbitron'; ctx.textAlign='center';
       ctx.fillText('SIGNAL LOST',cx,cy+20);
-      ctx.fillStyle=C.PLAYER; ctx.font='bold 24px Orbitron';
-      ctx.fillText('SCORE: '+score,cx,cy+65);
-      ctx.fillStyle='#7f8c8d'; ctx.font='bold 16px "Exo 2"';
+      let scSize = Math.max(16, goSize * 0.6);
+      ctx.fillStyle=C.PLAYER; ctx.font='bold '+scSize+'px Orbitron';
+      ctx.fillText('SCORE: '+score,cx,cy+20 + goSize + 5);
+      let btnSize = Math.max(12, goSize * 0.4);
+      ctx.fillStyle='#7f8c8d'; ctx.font='bold '+btnSize+'px "Exo 2"';
       ctx.globalAlpha=0.7+Math.sin(Date.now()*0.003)*0.3;
-      ctx.fillText('[ CLICK TO RETRY ]',cx,cy+110);
+      ctx.fillText('[ CLICK TO RETRY ]',cx,cy+20 + goSize + 5 + scSize + 20);
       ctx.globalAlpha=1;
     }
     
@@ -1287,9 +1309,11 @@ const WaveBreakerGame = (function() {
         {t:'Too late? Constructive interference = damage!',sub:'Time your shots or lose your shield',c:C.ORANGE}
       ];
       let s=steps[tutorialStep]||steps[0];
-      ctx.font='bold 26px Orbitron'; ctx.fillStyle=s.c;
+      let tSize = Math.min(W * 0.06, 26);
+      ctx.font='bold '+tSize+'px Orbitron'; ctx.fillStyle=s.c;
       ctx.fillText(s.t,cx,cy-20);
-      ctx.font='bold 16px "Exo 2"'; ctx.fillStyle='#1c303f';
+      let subSize = Math.max(12, tSize * 0.6);
+      ctx.font='bold '+subSize+'px "Exo 2"'; ctx.fillStyle='#1c303f';
       ctx.fillText(s.sub,cx,cy+20);
       ctx.fillStyle='#7f8c8d'; ctx.font='bold 12px "Exo 2"';
       ctx.fillText('Click to continue \u2022 Step '+(tutorialStep+1)+'/3',cx,cy+70);
@@ -1397,12 +1421,19 @@ const WaveBreakerGame = (function() {
             initBGParticles();
             
             resizeHandler = () => {
-                W=canvas.width=window.innerWidth; 
-                H=canvas.height=window.innerHeight; 
-                cx=W/2; cy=H/2; 
+                const dpr = window.devicePixelRatio || 1;
+                W = window.innerWidth; 
+                H = window.innerHeight; 
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+                ctx.scale(dpr, dpr);
+                cx = W / 2; cy = H / 2; 
                 SHIELD_RADIUS = W < 600 ? 50 : 70;
             };
             window.addEventListener('resize', resizeHandler);
+            resizeHandler(); // Call immediately to apply DPI scaling
             
             clickHandler = (e) => handleClick(e.clientX, e.clientY);
             canvas.addEventListener('click', clickHandler);
